@@ -1,4 +1,11 @@
-qinvoke = require('./qinvoke');
+/**
+ * Copyright (C) 2017 Andras Radics
+ * Licensed under the Apache License, Version 2.0
+ */
+
+'use strict';
+
+var qinvoke = require('./');
 
 module.exports = {
 
@@ -69,16 +76,17 @@ module.exports = {
         'should be fast': function(t) {
             var fn = function(a, b) { return a + b };
             var obj = { fn: fn };
-            var argv = [1, 2, 3, 4];
+            var argv = [1, 2];
+            var argv2 = [1, 2, 3, 4];
             var t1 = Date.now();
-            //for (var i=0; i<10000000; i++) qinvoke.invoke(fn, argv);
+            for (var i=0; i<10000000; i++) qinvoke.invoke(fn, argv);
             //for (var i=0; i<10000000; i++) qinvoke.invoke2(obj, 'fn', argv);
             //for (var i=0; i<10000000; i++) qinvoke.invoke2f(obj, obj.fn, argv);
             //for (var i=0; i<10000000; i++) qinvoke.invokeAny(fn, argv, null);
             //for (var i=0; i<10000000; i++) qinvoke.invoke2Any(obj.fn, obj, argv);
-            for (var i=0; i<10000000; i++) qinvoke.invoke2Any('fn', obj, argv);
+            //for (var i=0; i<10000000; i++) qinvoke.invoke2Any('fn', obj, argv);
             var t2 = Date.now();
-            console.log("AR: 100k invokes() in %d ms", t2 - t1);
+            //console.log("AR: 100k invokes() in %d ms", t2 - t1);
             // SKL 4.5g node-v6.7.0:
             //     invoke 2 args: 10m calls in 81 ms (123m/s direct), 4 args: 10m in 176ms (57m/s .apply)
             //     invoke2 2 args: 10m in 112 ms (89m/s direct named), 4 args: 10m in 181 ms (55m/s .apply)
