@@ -54,7 +54,7 @@ with the given `func`, `self`, and the call arguments.
 ### thunkify( method [,object] )
 
 Split the method into two functions, one to partially apply the function to the
-arguments (the thunk) and to return the other (the invoke) that runs the function
+arguments (the `thunk`) and to return the other (the `invoke`) that runs the function
 when called with a callback.
 
 If `object` is not specified, `method` has to be a function body.  With an

@@ -17,7 +17,8 @@
   ],
   "scripts": {
     "test": "qnit -V && qnit test* || echo qnit not installed",
-    "coverage": "nyc --version && nyc --reporter text --reporter lcov qnit test* || echo nyc not installed"
+    "coverage": "nyc --version && nyc --reporter text --reporter lcov qnit test* || echo nyc not installed",
+    "clean": "rm -rf .nyc_output coverage"
   },
   "dependencies": {
   },
