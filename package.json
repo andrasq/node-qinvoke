@@ -16,7 +16,7 @@
     "call"
   ],
   "scripts": {
-    "test": "qnit test"
+    "test": "qnit test-*"
   },
   "dependencies": {
   },
