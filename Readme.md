@@ -21,15 +21,18 @@ API
 
 ### invoke( func, argv )
 
-Apply the function to the arguments.
+Apply the function to the arguments.  Like `func.apply(null, argv)`, but much
+faster.
 
 ### invoke2( object, methodName, argv )
 
-Invoke the method on the arguments by name.
+Invoke the method on the arguments by name.  Like `object[methodName].apply(object,
+argv)`, but faster.
 
 ### invoke2f (object, method, argv )
 
-Invoke the method on the arguments.
+Invoke the method on the arguments.  Like `method.apply(object, argv)`, but much
+faster.
 
 ### interceptCall( func, [self,] handler(func, self, argv) )
 
