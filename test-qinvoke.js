@@ -7,9 +7,46 @@
 
 var qinvoke = require('./');
 
+function globalFunc(a, b, cb) {
+    return cb(null, a + b);
+}
+
 module.exports = {
 
     'interceptCall': {
+
+        'shoul error if no handler function': function(t) {
+            t.expect(3);
+            t.throws(function() { qinvoke.interceptCall() });
+            t.throws(function() { qinvoke.interceptCall(function(){}) });
+            t.throws(function() { qinvoke.interceptCall(function(){}, {}) });
+            t.done();
+        },
+
+        'should intercept function': function(t) {
+            var called = false, fn = function() {};
+            qinvoke.interceptCall(fn, function handler(func, obj, args) {
+                t.deepEqual(args, [1,2,3]);
+                t.done();
+            })(1, 2, 3);
+        },
+
+        'should intercept method': function(t) {
+            var obj = {
+                method: Math.random() * 0x1000000,
+            };
+            t.expect(4);
+            qinvoke.interceptCall(obj.method, obj, function(meth, obj, argv) {
+                t.equal(meth, obj.method);
+                t.deepEqual(argv, [1, 2]);
+            })(1,2);
+            qinvoke.interceptCall('method', obj, function(meth, obj, argv) {
+                t.equal(meth, 'method');
+                t.deepEqual(argv, [3, 4]);
+            })(3,4);
+            t.done();
+        },
+
         'should return arguments': function(t) {
             var fn = qinvoke.interceptCall(null, null, function(func, obj, args) {
                 return args;
@@ -108,6 +145,70 @@ module.exports = {
             //     invoke2 direct: 60m/s, .apply: 16m/s
             //     invoke2f direct: 40m/s, .apply: 16m/s
             t.done();
+        },
+    },
+
+    'thunkify': {
+
+        'should require a function, method or method name': function(t) {
+            var obj = { method: function() {} };
+            t.equal(typeof qinvoke.thunkify(function(){}), 'function');
+            t.equal(typeof qinvoke.thunkify(globalFunc), 'function');
+            t.equal(typeof qinvoke.thunkify(obj.method, obj), 'function');
+            t.equal(typeof qinvoke.thunkify(obj.method, obj), 'function');
+            t.equal(typeof qinvoke.thunkify('method', obj), 'function');
+            t.throws(function() { qinvoke.thunkify('globalFunction') });
+            t.done();
+        },
+
+        'should return a thunk function': function(t) {
+            var fn = qinvoke.thunkify(function(){});
+            t.equal(typeof fn, 'function');
+            t.done();
+        },
+
+        'invoking thunk should return a function': function(t) {
+            var fn = qinvoke.thunkify(function(){});
+            var thunk = fn(1, 2);
+            t.equal(typeof thunk, 'function');
+            t.done();
+        },
+
+        'invoking thunk return value should run thunkified function': function(t) {
+            t.expect(2);
+            var func = function(p1, p2, cb) {
+                t.equal(p1, 11);
+                t.equal(p2, 22);
+                cb();
+            }
+            var thunk = qinvoke.thunkify(func)(11, 22);
+            thunk(function cb() {
+                t.done();
+            })
+        },
+
+        'should thunkify global function by name and value': function(t) {
+            var thunk = qinvoke.thunkify(globalFunc);
+            thunk(1, 2)(function(err, ret) {
+                t.equal(ret, 3);
+                t.done();
+            })
+        },
+
+        'should thunkify method by name and value': function(t) {
+            var obj = {
+                method: function(a, b, cb) { cb(3) },
+            };
+            t.expect(2);
+            var thunk = qinvoke.thunkify('method', obj);
+            thunk(1, 2)(function cb(c) {
+                t.equal(c, 3);
+            })
+            var thunk = qinvoke.thunkify(obj.method, obj);
+            thunk(1, 2)(function cb(c) {
+                t.equal(c, 3);
+                t.done();
+            })
         },
     },
 }

@@ -15,8 +15,8 @@ module.exports = {
     interceptCall: interceptCall,
     thunkify: thunkify,
 
-    invokeAny: invokeAny,
-    invoke2Any: invoke2Any,
+    //invokeAny: invokeAny,
+    //invoke2Any: invoke2Any,
 };
 
 
@@ -62,6 +62,7 @@ function invoke2f( obj, fn, av ) {
     }
 }
 
+/**
 // XXX direct call is 60% faster than indirecting through here
 // XXX 123ms vs 92ms 33% faster if correct number of arguments passed to function (123 when expects 3, got 2)
 // XXX 343ms vs 130ms *much* slower to invoke if testing !arguments[2] and is not provided
@@ -75,7 +76,7 @@ function invokeAny( fn, obj, av ) {
 function invoke2Any( fn, obj, av ) {
     return typeof fn === 'function' ? invoke2f(obj, fn, av) : invoke2(obj, fn, av);
 }
-
+**/
 
 /*
  * Intercept calls to the function or method and redirect them to the handler.
@@ -85,7 +86,7 @@ function invoke2Any( fn, obj, av ) {
  */
 function interceptCall( method, self, handler ) {
     if (!handler && typeof self === 'function' ) { handler = self ; self = null }
-    if (!handler) throw new Error("handler function required");
+    if (typeof handler !== 'function') throw new Error("handler function required");
 
     return function callIntercepter( ) {
         var args;
@@ -121,14 +122,13 @@ function interceptCall( method, self, handler ) {
  *     });
  */
 function thunkify( method, object ) {
-    var invoke1, invoke2;
+    var _invoke1, _invoke2;
     if (object) {
-        invoke2 = typeof method === 'function' ? invoke2f : invoke2;
+        _invoke2 = typeof method === 'function' ? invoke2f : invoke2;
     }
     else {
-        invoke1 = invoke;
-        if (typeof method !== 'function') method = global[method];
-        if (!method) throw new Error("unable to find method");
+        _invoke1 = invoke;
+        if (typeof method !== 'function') throw new Error("function or method required");
     }
 
     // return a function that saves its arguments and will return a function that
@@ -142,65 +142,66 @@ function thunkify( method, object ) {
         return function invokeThunk(cb) {
             args[args.length - 1] = cb;
             // thunk caller must catch errors thrown by the method (or the callback)
-            return self ? invoke2(self, method, args) : invoke1(method, args);
+            return self ? _invoke2(self, method, args) : _invoke1(method, args);
         }
     }
 }
 
+/**
 
-    // thunkify the function
-    function thunkify2a( func ) {
-        return thunkify2b('fn', {fn: func});
-    }
+// thunkify the function
+function thunkify2a( func ) {
+    return thunkify2b('fn', {fn: func});
+}
 
-    // thunkify the named method of the object
-    // Can thunkify methods either by name or by value.
-    // Unlike `thunkify`, calling the callback more than once is an error.
-    // XXX that prevents valid use cases where the callback is invoked multiple times
-    // XXX hoisting errors into the callback is only valid for callbacks taking an err
-    function thunkify2b( object, method ) {
-        var self = this;
-        var invoke = self.invoke;
-        var invoke2 = (typeof method === 'function') ? self.invoke2f : self.invoke2;
+// thunkify the named method of the object
+// Can thunkify methods either by name or by value.
+// Unlike `thunkify`, calling the callback more than once is an error.
+// XXX that prevents valid use cases where the callback is invoked multiple times
+// XXX hoisting errors into the callback is only valid for callbacks taking an err
+function thunkify2b( object, method ) {
+    var self = this;
+    var invoke = self.invoke;
+    var invoke2 = (typeof method === 'function') ? self.invoke2f : self.invoke2;
 
-        return function doSaveArguments(/* VARARGS */) {
-            var av = new Array(arguments.length);
-            for (var i=0; i<av.length; i++) av[i] = arguments[i];
+    return function doSaveArguments() {
+        var av = new Array(arguments.length);
+        for (var i=0; i<av.length; i++) av[i] = arguments[i];
 
-            if (!object) {
-                // if no object, use the object that the thunk is attached to,
-                if (this && this !== global) object = this;
-                else throw new Error("no context");
+        if (!object) {
+            // if no object, use the object that the thunk is attached to,
+            if (this && this !== global) object = this;
+            else throw new Error("no context");
+        }
+
+        return function doInvoke( callback ) {
+            var returned = false;
+
+            av.push(function() {
+                if (returned) throw new Error("already returned");
+                returned = true;
+                switch (arguments.length) {
+                case 0: return callback();
+                case 1: return callback(arguments[0]);
+                case 2: return callback(arguments[0], arguments[1]);
+                case 3: return callback(arguments[0], arguments[1], arguments[2]);
+                default: return invoke(callback, arguments);
+                }
+            })
+
+            try {
+                invoke2(object, method, av)
             }
-
-            return function doInvoke( callback ) {
-                var returned = false;
-
-                av.push(function(/* VARARGS */) {
-                    if (returned) throw new Error("already returned");
-                    returned = true;
-                    switch (arguments.length) {
-                    case 0: return callback();
-                    case 1: return callback(arguments[0]);
-                    case 2: return callback(arguments[0], arguments[1]);
-                    case 3: return callback(arguments[0], arguments[1], arguments[2]);
-                    default: return invoke(callback, arguments);
-                    }
-                })
-
-                try {
-                    invoke2(object, method, av)
-                }
-                catch (err) {
-                    // hoist errors from the method into the callback, but
-                    // re-throw uncaught errors originating within the callback
-                    if (returned) throw err;
-                    returned = true;
-                    callback(err);
-                }
+            catch (err) {
+                // hoist errors from the method into the callback, but
+                // re-throw uncaught errors originating within the callback
+                if (returned) throw err;
+                returned = true;
+                callback(err);
             }
         }
     }
+}
 
 /**
 
