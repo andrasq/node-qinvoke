@@ -16,13 +16,12 @@
     "call"
   ],
   "scripts": {
-    "test": "qnit -V && qnit test* || echo qnit not installed",
-    "coverage": "nyc --version && nyc --reporter text --reporter lcov qnit test* || echo nyc not installed",
+    "test": "qnit --version && qnit test* || echo qnit not installed, cannot unit test",
+    "coverage": "nyc --version && nyc --reporter text --reporter lcov qnit test* || echo nyc not installed, cannot test coverage",
     "clean": "rm -rf .nyc_output coverage"
   },
   "dependencies": {
   },
   "devDependencies": {
-    "qnit": "^0.12.0"
   }
 }
