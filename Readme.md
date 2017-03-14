@@ -73,6 +73,12 @@ into
     }
 
 
+### once( func )
+
+Return a function that will invoke `func` at most once.  Subsequent calls are suppressed.
+Errors thrown in func are not caught.
+
+
 Todo
 ----
 

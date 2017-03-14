@@ -14,6 +14,7 @@ module.exports = {
     invoke2f: invoke2f,
     interceptCall: interceptCall,
     thunkify: thunkify,
+    once: once,
 
     //invokeAny: invokeAny,
     //invoke2Any: invoke2Any,
@@ -60,6 +61,21 @@ function invoke2f( obj, fn, av ) {
     case 3: return fn.call(obj, av[0], av[1], av[2])
     default: return fn.apply(obj, av)
     }
+}
+
+/**
+ * wrapper fn and ensure it will be called only once
+ * Can wrapper method calls, just attach the wrapper to the object.
+ */
+function once( fn ) {
+    if (typeof fn !== 'function') throw new Error("not a function");
+    var called = false;
+    return interceptCall(fn, function(method, self, args) {
+        if (!called) {
+            called = true;
+            invoke2f(self, method, args);
+        }
+    })
 }
 
 /**

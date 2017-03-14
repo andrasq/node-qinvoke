@@ -211,4 +211,49 @@ module.exports = {
             })
         },
     },
+
+    'once': {
+
+        'should suppress second call': function(t) {
+            var called = false;
+            var fn = function(){ called = true };
+            var test = qinvoke.once(fn);
+
+            t.ok(!called);
+            test();
+            t.ok(called);
+
+            called = false;
+            test();
+            t.ok(!called);
+
+            t.done();
+        },
+
+        'should pass arguments': function(t) {
+            var tests = [
+                [],
+                [1],
+                [1, 2],
+                [1, 2, 3],
+                [1, 2, 3, 4],
+                [1, 2, 3, 4, 5],
+                [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            ];
+            var argv;
+            var fn = function() {
+                argv = Array.prototype.slice.call(arguments, 0);
+            }
+            for (var i=0; i<tests.length; i++) {
+                argv = null;
+                var test = qinvoke.once(fn);
+                test.apply(null, tests[i]);
+                t.deepEqual(argv, tests[i]);
+                argv = null;
+                test.apply(tests[i]);
+                t.strictEqual(argv, null);
+                t.done();
+            }
+        },
+    },
 }
