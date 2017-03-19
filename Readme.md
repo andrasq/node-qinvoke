@@ -43,7 +43,7 @@ with the given `func`, `self`, and the call arguments.
     function spy( func ) {
         return qinvoke.interceptCall(func, null, function(func, self, argv) {
             console.log("calling %s with", func.name, argv);
-            return func.call(self, argv);
+            return func.apply(self, argv);
         })
     }
     console.log2 = spy(console.log);
