@@ -14,7 +14,7 @@ module.exports = {
     invoke2f: invoke2f,
     interceptCall: interceptCall,
     thunkify: thunkify,
-    once: once,
+    once: callOnce,
 
     //invokeAny: invokeAny,
     //invoke2Any: invoke2Any,
@@ -24,7 +24,7 @@ module.exports = {
 // apply the function to the argument list
 // 100m/s, 13m/s apply
 // Skylake node-v0.10.42: 122m/s, 34m/s apply
-// Skylake node-v7.5.0: 133m/s, 65m/s apply
+// Skylake node-v7.5.0: 133m/s, 65m/s apply (210m/s, 116m/s meas 2 sec)
 function invoke( fn, av ) {
     switch (av.length) {
     case 0: return fn()
@@ -47,7 +47,7 @@ function invoke2( obj, name, av ) {
     case 3: return obj[name](av[0], av[1], av[2])
     default: return obj[name].apply(obj, av)
     }
-};
+}
 
 // apply the method function to the argument list
 // 40m/s call, 16m/s apply
@@ -67,7 +67,7 @@ function invoke2f( obj, fn, av ) {
  * wrapper fn and ensure it will be called only once
  * Can wrapper method calls, just attach the wrapper to the object.
  */
-function once( fn ) {
+function callOnce1( fn ) {
     if (typeof fn !== 'function') throw new Error("not a function");
     var called = false;
     return interceptCall(fn, function(method, self, args) {
@@ -76,6 +76,24 @@ function once( fn ) {
             invoke2f(self, method, args);
         }
     })
+}
+
+function callOnce( fn ) {
+    var called = false;
+    return function() {
+        if (called) return;
+        called = true;
+        switch (arguments.length) {
+        case 0:  return fn(); break
+        case 1:  return fn(arguments[0]); break
+        case 2:  return fn(arguments[0], arguments[1]); break
+        case 3:  return fn(arguments[0], arguments[1], arguments[2]); break;
+        default:
+            var args = new Array();
+            for (var i=0; i<arguments.length; i++) args[i] = arguments[i];
+            return fn.apply(null, args); break
+        }
+    }
 }
 
 /**
@@ -105,15 +123,13 @@ function interceptCall( method, self, handler ) {
     if (typeof handler !== 'function') throw new Error("handler function required");
 
     return function callIntercepter( ) {
-        var args;
-
         switch (arguments.length) {
         case 0: args = []; break;
         case 1: args = [arguments[0]]; break;
         case 2: args = [arguments[0], arguments[1]]; break;
         case 3: args = [arguments[0], arguments[1], arguments[2]]; break;
         default:
-            args = new Array();
+            var args = new Array();
             for (var i=0; i<arguments.length; i++) args[i] = arguments[i];
             break;
         }
