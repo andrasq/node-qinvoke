@@ -252,8 +252,129 @@ module.exports = {
                 argv = null;
                 test.apply(tests[i]);
                 t.strictEqual(argv, null);
-                t.done();
             }
+            t.done();
+        },
+
+        'test speed': function(t) {
+            var t1 = Date.now();
+            for (var i=0; i<10000; i++) {
+                var fn = qinvoke.once(function(a, b) { return a + b });
+            }
+            var t2 = Date.now();
+            //console.log("AR: 100k once in %d ms", t2 - t1);
+            // 55m/s create and run
+            t.done();
         },
     },
+
+    'errorToObject': {
+
+        'should not convert non-objects': function(t) {
+            var x;
+            t.strictEqual(qinvoke.errorToObject(x = undefined), x);
+            t.strictEqual(qinvoke.errorToObject(x = null), x);
+            t.strictEqual(qinvoke.errorToObject(x = 1234.5), x);
+            t.strictEqual(qinvoke.errorToObject(x = "test"), x);
+            t.done();
+        },
+
+        'should not convert non-Errors in strict mode': function(t) {
+            var x;
+            t.strictEqual(qinvoke.errorToObject(x = {a:1}, true), x);
+            t.done();
+        },
+
+        'should convert Errors in strict mode': function(t) {
+            var x = new Error();
+            x.a = 123;
+            t.ok(qinvoke.errorToObject(x) !== x);
+            t.ok(qinvoke.errorToObject(x).a === 123);
+            t.done();
+        },
+
+        'should convert Error to object': function(t) {
+            var err = new TypeError("deliberate error");
+            var obj = qinvoke.errorToObject(err);
+            t.equal(obj.message, "deliberate error");
+            t.equal(obj._eConstructor__, "TypeError");
+            t.ok(obj.stack);
+            t.done();
+        },
+
+        'should copy out non-enumerable error fields': function(t) {
+            var err = new Error();
+            err.code = 'ENOENT';
+            err.syscall = 'open';
+            Object.defineProperty(err, 'code', { enumerable: false });
+            Object.defineProperty(err, 'syscall', { enumerable: false });
+            var obj = qinvoke.errorToObject(err);
+            t.ok('code' in obj);
+            t.ok(Object.keys(obj).indexOf('code') >= 0);
+            t.done();
+        },
+
+        'should convert object back to Error': function(t) {
+            var err = new TypeError("deliberate error");
+            var obj = qinvoke.errorToObject(err);
+            var err2 = qinvoke.objectToError(obj);
+            t.ok(err2 instanceof TypeError);
+            t.strictEqual(err2.message, "deliberate error");
+            t.deepEqual(Object.getOwnPropertyNames(err2), Object.getOwnPropertyNames(err));
+            t.done();
+        },
+
+    },
+
+    'objectToError': {
+
+        'shuold not convert falsy objects': function(t) {
+            var x;
+            t.strictEqual(qinvoke.objectToError(x = undefined, true), x);
+            t.strictEqual(qinvoke.objectToError(x = null, true), x);
+            t.strictEqual(qinvoke.objectToError(x = "", true), x);
+            t.strictEqual(qinvoke.objectToError(x = 0, true), x);
+            t.done();
+        },
+
+        'should not convert non-errors in strict mode': function(t) {
+            var x;
+            t.strictEqual(qinvoke.objectToError(x = undefined, true), x);
+            t.strictEqual(qinvoke.objectToError(x = null, true), x);
+            t.strictEqual(qinvoke.objectToError(x = 1234.5, true), x);
+            t.strictEqual(qinvoke.objectToError(x = "test string", true), x);
+            t.strictEqual(qinvoke.objectToError(x = /foo/i, true), x);
+            t.strictEqual(qinvoke.objectToError(x = {a:1, b:{}}, true), x);
+            t.done();
+        },
+
+        'should make standard hidden fields non-enumerable': function(t) {
+            var err = qinvoke.objectToError({ code: 'ENOENT', syscall: 'open' });
+            t.equal(err.code, 'ENOENT');
+            t.equal(err.syscall, 'open');
+            t.ok(Object.keys(err).indexOf('code') < 0);
+            t.ok(Object.keys(err).indexOf('syscall') < 0);
+            t.done();
+        },
+
+        'should convert plain object back Error': function(t) {
+            var err = qinvoke.objectToError({a:123, message: "test error"});
+            t.ok(err.message !== undefined);
+            t.ok(err.stack !== undefined);
+            t.ok(err instanceof Error);
+            t.ok(! ('_eConstructor__' in err));
+            t.equal(err.a, 123);
+            t.done();
+        },
+
+        'should ensure that message and stack are set': function(t) {
+            var err = qinvoke.objectToError({});
+            t.equal(typeof err.message, 'string');
+            t.equal(typeof err.stack, 'string');
+            t.equal(err.stack.indexOf("Error\n"), 0);
+            t.ok(! ('_eConstructor__' in err));
+            t.done();
+        },
+    }
+
 }

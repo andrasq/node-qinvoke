@@ -15,6 +15,8 @@ module.exports = {
     interceptCall: interceptCall,
     thunkify: thunkify,
     once: callOnce,
+    errorToObject: errorToObject,
+    objectToError: objectToError,
 
     //invokeAny: invokeAny,
     //invoke2Any: invoke2Any,
@@ -67,6 +69,7 @@ function invoke2f( obj, fn, av ) {
  * wrapper fn and ensure it will be called only once
  * Can wrapper method calls, just attach the wrapper to the object.
  */
+/**
 function callOnce1( fn ) {
     if (typeof fn !== 'function') throw new Error("not a function");
     var called = false;
@@ -77,6 +80,7 @@ function callOnce1( fn ) {
         }
     })
 }
+**/
 
 function callOnce( fn ) {
     var called = false;
@@ -84,16 +88,64 @@ function callOnce( fn ) {
         if (called) return;
         called = true;
         switch (arguments.length) {
-        case 0:  return fn(); break
-        case 1:  return fn(arguments[0]); break
-        case 2:  return fn(arguments[0], arguments[1]); break
-        case 3:  return fn(arguments[0], arguments[1], arguments[2]); break;
+        case 0:  return fn();
+        case 1:  return fn(arguments[0]);
+        case 2:  return fn(arguments[0], arguments[1]);
+        case 3:  return fn(arguments[0], arguments[1], arguments[2]);
         default:
             var args = new Array();
             for (var i=0; i<arguments.length; i++) args[i] = arguments[i];
-            return fn.apply(null, args); break
+            return fn.apply(null, args);
         }
     }
+}
+
+
+/*
+ * convert the error with its non-enumerable fields into a serializable object
+ */
+function errorToObject( err, strict ) {
+    // non-objects are already serializable
+    if (!err || typeof err !== 'object') return err;
+    if (strict && !(err instanceof Error)) return err;
+
+    var obj = {};
+    obj._isError__ = true;
+    obj._eConstructor__ = err.constructor && err.constructor.name;
+
+    var fields = Object.getOwnPropertyNames(err);
+    for (var i=0; i<fields.length; i++) {
+        obj[fields[i]] = err[fields[i]];
+    }
+
+    return obj;
+}
+
+/*
+ * convert a plain object back into an Error,
+ * with the instanceof and properties of the original.
+ */
+function objectToError( obj, strict ) {
+    if (!obj || strict && !obj._isError__) return obj;
+
+    var constructorName = obj._eConstructor__;
+    if (!constructorName || !global[constructorName]) constructorName = 'Error';
+
+    var err = new global[constructorName]();
+    var fields = Object.getOwnPropertyNames(err);
+    for (var i=0; i<fields.length; i++) delete err[fields[i]];
+
+    var hiddenFields = ['message', 'code', 'errno', 'syscall', 'path', 'address', 'port', 'stack'];
+
+    for (var k in obj) err[k] = obj[k];
+    if ('_isError__' in err) delete err._isError__;
+    if ('_eConstructor__' in err) delete err._eConstructor__;
+    // ensure that .message and .stack are always set
+    if (obj.message === undefined) err.message = "";
+    if (obj.stack === undefined) err.stack = err.toString() + '\n';
+
+    for (var k in err) if (hiddenFields.indexOf(k) >= 0) Object.defineProperty(err, k, { enumerable: false });
+    return err;
 }
 
 /**

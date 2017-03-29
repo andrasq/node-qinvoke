@@ -78,6 +78,17 @@ into
 Return a function that will invoke `func` at most once.  Subsequent calls are suppressed.
 Errors thrown in func are not caught.
 
+### errorToObject( err [,errorsOnly] )
+
+Convert the `Error` with its non-enumerable fields into a serializable object.
+The object can be converted back into an Error with `objectToError`.
+
+### objectToError( obj [,errorsOnly] )
+
+Convert the object back into `Error` it represents.  The conversion is reversible
+for the primitive errors of `Error`, `RangeError`, `ReferenceError`, `SyntaxError`
+and `TypeError`, and errors with global constructors.
+
 
 Todo
 ----
