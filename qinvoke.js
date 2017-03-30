@@ -171,23 +171,21 @@ function invoke2Any( fn, obj, av ) {
  * The intercept returns the handler result so it can be used synchronously too.
  */
 function interceptCall( method, self, handler ) {
-    if (!handler && typeof self === 'function' ) { handler = self ; self = null }
+    if (!handler) { handler = self ; self = null }
     if (typeof handler !== 'function') throw new Error("handler function required");
 
     return function callIntercepter( ) {
+        if (!self) self = this;
         switch (arguments.length) {
-        case 0: args = []; break;
-        case 1: args = [arguments[0]]; break;
-        case 2: args = [arguments[0], arguments[1]]; break;
-        case 3: args = [arguments[0], arguments[1], arguments[2]]; break;
+        case 0: return handler(method, self, []);
+        case 1: return handler(method, self, [arguments[0]]);
+        case 2: return handler(method, self, [arguments[0], arguments[1]]);
+        case 3: return handler(method, self, [arguments[0], arguments[1], arguments[2]]);
         default:
             var args = new Array();
             for (var i=0; i<arguments.length; i++) args[i] = arguments[i];
-            break;
+            return handler(method, self, args);
         }
-
-        if (!self) self = this;
-        return handler(method, self, args);
     }
 }
 
