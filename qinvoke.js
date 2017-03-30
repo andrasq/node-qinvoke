@@ -111,7 +111,7 @@ function errorToObject( err, strict ) {
 
     var obj = {};
     obj._isError__ = true;
-    obj._eConstructor__ = err.constructor && err.constructor.name;
+    if (err instanceof Error) obj._eConstructor__ = err.constructor.name;
 
     var fields = Object.getOwnPropertyNames(err);
     for (var i=0; i<fields.length; i++) {
@@ -138,8 +138,8 @@ function objectToError( obj, strict ) {
     var hiddenFields = ['message', 'code', 'errno', 'syscall', 'path', 'address', 'port', 'stack'];
 
     for (var k in obj) err[k] = obj[k];
-    if ('_isError__' in err) delete err._isError__;
-    if ('_eConstructor__' in err) delete err._eConstructor__;
+    delete err._isError__;
+    delete err._eConstructor__;
     // ensure that .message and .stack are always set
     if (obj.message === undefined) err.message = "";
     if (obj.stack === undefined) err.stack = err.toString() + '\n';
