@@ -302,6 +302,15 @@ module.exports = {
             t.done();
         },
 
+        'should convert non-Error object to object': function(t) {
+            var err = { a: 1, b: 2, c: 3 };
+            var obj = qinvoke.errorToObject(err);
+            t.equal(obj._eConstructor__, undefined);
+            delete(obj._isError__);
+            t.deepEqual(obj, err);
+            t.done();
+        },
+
         'should copy out non-enumerable error fields': function(t) {
             var err = new Error();
             err.code = 'ENOENT';
