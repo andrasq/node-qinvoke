@@ -1,6 +1,9 @@
 qinvoke
 =======
 
+[![Build Status](https://travis-ci.org/andrasq/node-qinvoke.svg?branch=master)](https://travis-ci.org/andrasq/node-qinvoke)
+[![Coverage Status](https://coveralls.io/repos/github/andrasq/node-qinvoke/badge.svg?branch=master)](https://coveralls.io/github/andrasq/node-qinvoke?branch=master)
+
 Quick arguments gathering and function invocation.
 
 Example
