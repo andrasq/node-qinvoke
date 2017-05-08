@@ -320,7 +320,8 @@ module.exports = {
             var err2 = qinvoke.objectToError(obj);
             t.ok(err2 instanceof TypeError);
             t.strictEqual(err2.message, "deliberate error");
-            t.deepEqual(Object.getOwnPropertyNames(err2), Object.getOwnPropertyNames(err));
+            // sort the property names, node-v0.10 can return them out of order
+            t.deepEqual(Object.getOwnPropertyNames(err2).sort(), Object.getOwnPropertyNames(err).sort());
             t.done();
         },
 

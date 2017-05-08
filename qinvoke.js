@@ -132,6 +132,7 @@ function objectToError( obj, strict ) {
     if (!constructorName || !global[constructorName]) constructorName = 'Error';
 
     var err = new global[constructorName]();
+    // note: node-v0.10 getOwnPropertyNames can return the names out of order
     var fields = Object.getOwnPropertyNames(err);
     for (var i=0; i<fields.length; i++) delete err[fields[i]];
 
