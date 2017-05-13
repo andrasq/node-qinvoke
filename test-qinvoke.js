@@ -123,7 +123,7 @@ module.exports = {
             //for (var i=0; i<10000000; i++) qinvoke.invoke2Any(obj.fn, obj, argv);
             //for (var i=0; i<10000000; i++) qinvoke.invoke2Any('fn', obj, argv);
             var t2 = Date.now();
-            //console.log("AR: 100k invokes() in %d ms", t2 - t1);
+            //console.log("AR: 10m invoke() in %d ms", t2 - t1);
             // SKL 4.5g node-v6.7.0:
             //     invoke 2 args: 10m calls in 81 ms (123m/s direct), 4 args: 10m in 176ms (57m/s .apply)
             //     invoke2 2 args: 10m in 112 ms (89m/s direct named), 4 args: 10m in 181 ms (55m/s .apply)
