@@ -52,7 +52,7 @@ with the given `func`, `self`, and the call arguments.
     console.log2 = spy(console.log);
     console.log2("testing", 1, 2, 3);
     // => calling bound  with [ 'testing', 1, 2, 3 ]
-    // => [ 'testing', 1, 2, 3 ]
+    // => testing 1 2 3
 
 ### thunkify( method [,object] )
 
