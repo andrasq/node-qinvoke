@@ -125,27 +125,31 @@ function errorToObject( err, strict ) {
  * convert a plain object back into an Error,
  * with the instanceof and properties of the original.
  */
+var hiddenErrorFields = { message: 1, code: 1, errno: 1, syscall: 1, path: 1, address: 1, port: 1, stack: 1 };
 function objectToError( obj, strict ) {
     if (!obj || strict && !obj._isError__) return obj;
 
+    // convert to an object of the same instance
     var constructorName = obj._eConstructor__;
     if (!constructorName || !global[constructorName]) constructorName = 'Error';
-
     var err = new global[constructorName]();
+
+    // the returned error must have only the restored properties
     // note: node-v0.10 getOwnPropertyNames can return the names out of order
     var fields = Object.getOwnPropertyNames(err);
     for (var i=0; i<fields.length; i++) delete err[fields[i]];
 
-    var hiddenFields = ['message', 'code', 'errno', 'syscall', 'path', 'address', 'port', 'stack'];
-
+    // restore the properties
     for (var k in obj) err[k] = obj[k];
     delete err._isError__;
     delete err._eConstructor__;
+
     // ensure that .message and .stack are always set
     if (obj.message === undefined) err.message = "";
     if (obj.stack === undefined) err.stack = err.toString() + '\n';
 
-    for (var k in err) if (hiddenFields.indexOf(k) >= 0) Object.defineProperty(err, k, { enumerable: false });
+    // make hidden Error properties hidden
+    for (var k in err) if (hiddenErrorFields[k]) Object.defineProperty(err, k, { enumerable: false });
     return err;
 }
 
